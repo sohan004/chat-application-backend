@@ -1,16 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { userGet, userSign, userPost, userPut, userDelete } = require('../controlers/accountContolers');
+const { userGet, userSign, userPost, userPut, userDelete, forgetPassword } = require('../controlers/accountContolers');
 
 
 
-router.get('/', userGet);
+router.get('/', userGet);  //--
 
-router.post('/sign', userSign);
+router.post('/forget', forgetPassword);
 
-router.post('/', userPost);
+router.post('/sign', userSign); //--
 
-router.put('/', userPut);
+router.post('/', userPost); //--
+
+router.put('/:id', userPut);
 
 router.delete('/', userDelete);
 

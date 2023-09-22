@@ -31,6 +31,24 @@ const userGet = async (req, res) => {
 };
 
 
+const forgetPassword = async (req, res) => {
+    const findUser = await UserAccount.findOne({ email: req.body.email });
+    if (!findUser) return res.status(400).send({ message: 'Email not registered.', success: false });
+
+    const validPassword = await bcrypt.compare(req.body.password, findUser.password)
+
+    if (!validPassword) return res.status(400).send({ message: 'Old  Password Invalid.', success: false });
+
+    const salt = await bcrypt.genSalt(saltRounds);
+    const hash = await bcrypt.hash(req.body.newPassword, salt);
+    const result = await UserAccount.findByIdAndUpdate({ _id: findUser._id }, { password: hash });
+
+
+    res.send({ message: 'Password changed successfully', success: true });
+
+}
+
+
 const userSign = async (req, res) => {
     const findUser = await UserAccount.findOne({ email: req.body.email });
     if (!findUser) return res.status(400).send({ message: 'Email not registered.', success: false });
@@ -82,8 +100,19 @@ const userPost = async (req, res) => {
 
 
 
-const userPut = async (req, res) => { };
+const userPut = async (req, res) => {
+    const findUser = UserAccount.findById(req.params.id);
+    if (!findUser) return res.status(400).send({ message: 'User not found.', success: false });
+
+    const updateUser = await UserAccount.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+    if (!updateUser) return res.status(400).send({ message: 'User not updated.', success: false });
+
+    // console.log(updateUser);
+    res.send({ message: 'User updated successfully', success: true });
+};
+
+
 const userDelete = async (req, res) => { };
 
 
-module.exports = { userGet, userSign, userPost, userPut, userDelete }
+module.exports = { userGet, userSign, userPost, userPut, userDelete, forgetPassword }
