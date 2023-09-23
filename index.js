@@ -5,6 +5,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const accoutRouter = require('./router/accountRouter');
+const chatListRouter = require('./router/chatListRouter');
 dotenv.config();
 
 mongoose.connect(process.env.mongouri, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 
 // all route
 app.use('/account', accoutRouter);
+app.use('/chatlist', chatListRouter);
 
 
 app.listen(port)

@@ -11,8 +11,14 @@ const UserAccount = mongoose.model('UserAccount', accountSchema);
 
 const userGet = async (req, res) => {
 
+    const token = req.header('Authorization');
+
     try {
-        const decoded = await jwt.verify(req.headers['authorization'], process.env.jwtPrivateKey);
+        const decoded = await jwt.verify(token, process.env.jwtPrivateKey);
+
+        if (!decoded) return res.status(400).send({ message: 'Invalid token.', success: false });
+
+        // if (!decoded) return res.status(400).send({ message: 'Invalid token.', success: false });
 
         const findUser = await UserAccount.findOne({ _id: decoded.id }).select('-password');
         if (!findUser) return res.status(400).send({ message: 'Email not registered.', success: false });

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { userGet, userSign, userPost, userPut, userDelete, forgetPassword } = require('../controlers/accountContolers');
+const authorizationToken = require('../midelware/authorization');
 
 
 
@@ -10,11 +11,11 @@ router.post('/forget', forgetPassword);
 
 router.post('/sign', userSign); //--
 
-router.post('/', userPost); //--
+router.post('/', authorizationToken, userPost); //--
 
-router.put('/:id', userPut);
+router.put('/:id', authorizationToken, userPut);
 
-router.delete('/', userDelete);
+router.delete('/', authorizationToken, userDelete);
 
 
 
