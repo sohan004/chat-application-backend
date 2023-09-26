@@ -27,7 +27,8 @@ const chatListSchema = new mongoose.Schema({
         type: String,
     },
     lastMessage: {
-        type: String,
+        type: mongoose.Types.ObjectId,
+        ref: 'Chat',
     },
     createdAt: {
         type: Date,

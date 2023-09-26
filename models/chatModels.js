@@ -26,6 +26,11 @@ const chatShema = new mongoose.Schema({
     video: {
         type: String,
     },
+    seenBy: [
+        {
+            type: mongoose.Types.ObjectId,
+        }
+    ],
     createdAt: {
         type: Date,
         default: new Date()

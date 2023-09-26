@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const { chatListPost, getAllChatLIst, searchUser, getAllChat, chatCreate } = require('../controlers/chatListControler');
 const authorizationToken = require('../midelware/authorization');
+const multerupload = require('../midelware/multer');
 
 
 
@@ -19,6 +20,8 @@ router.get('/chat/:id', authorizationToken, getAllChat);
 router.put('/:id', (req, res) => { });
 
 router.delete('/', (req, res) => { });
+
+
 
 
 module.exports = router;

@@ -23,7 +23,14 @@ const accountSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    updatedAt: {
+        type: Date,
+        default: new Date()
+    },
+    activeStatus: {
+        type: Boolean,
+    },
 });
 
 module.exports = accountSchema;
