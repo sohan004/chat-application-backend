@@ -22,12 +22,16 @@ const chatListPost = async (req, res) => {
             const check2 = await ChatList.findOne({ $and: [{ participent: { $in: [req.user.id] } }, { createUser: { $in: req.body.participent } }] });
 
             if (check || check2) {
-                res.send({ message: 'Chat already created', success: false, chatInfo: check || check2 });
+                res.send({ message: 'Chat already created', success: true, chatInfo: check || check2 });
                 return;
             }
         }
 
+
         const result = await chatList.save();
+        const chatLIst = await ChatList.findById(result._id).populate('createUser', '-password').populate('participent', '-password').populate('lastMessage');
+
+        await global.io.emit('newChatListCreate', { chatInfo: chatLIst });
 
         res.send({ message: 'Chat created successfully', success: true, chatInfo: result });
 
@@ -42,7 +46,7 @@ const chatListPost = async (req, res) => {
 
 const getAllChatLIst = async (req, res) => {
     try {
-        const chatList = await ChatList.find({ $or: [{ createUser: req.user.id }, { participent: { $in: req.user.id } }] }).populate('createUser', '-password').populate('participent', '-password').sort({ updatedAt: -1 }).populate('lastMessage');
+        const chatList = await ChatList.find({ $or: [{ createUser: req.user.id }, { participent: { $in: req.user.id } }] }).populate('createUser', '-password').populate('participent', '-password').populate('lastMessage').sort({ updatedAt: -1 });
 
         res.send({ message: 'Chat list found', success: true, chatList: chatList });
 
@@ -72,57 +76,23 @@ const searchUser = async (req, res) => {
 
 
 
-const chatCreate = async (req, res) => {
-
-    const findChatList = await ChatList.findById(req.body.chatId);
-
-    try {
-
-        if (await findChatList.createUser == req.user.id || await findChatList.participent.includes(req.user.id)) {
-
-            const chat = await new Chat({
-                sender: req.user.id,
-                seenBy: [req.user.id],
-                ...req.body
-            });
-            const result = await chat.save();
-
-            findChatList.lastMessage = await result._id;
-            findChatList.updatedAt = await new Date();
-            await findChatList.save();
-
-            res.send({ message: 'Chat created successfully', success: true, chatInfo: result });
-        }
-        else {
-            res.send({ message: 'you are no authorized to create chat', success: false });
-        }
-
-
-    } catch (error) {
-        res.send({ message: 'Chat not create', success: false });
-    }
-}
-
-
-
-
 const getAllChat = async (req, res) => {
     try {
         const findChatList = await ChatList.findById(req.params.id).populate('createUser', '-password').populate('participent', '-password');
 
 
+        if (await findChatList?.createUser?._id == req.user.id || await findChatList.participent.find(parti => parti._id == req.user.id)) {
 
-
-        if (await findChatList?.createUser?._id == req.user.id || await findChatList.find(f => f._id == req.user.id)) {
-
-            const chat = await Chat.find({ chatId: req.params.id }).sort({ createdAt: 1 });
+            const chat = await Chat.find({ chatId: req.params.id }).sort({ createdAt: -1 }).skip(+req?.query?.skip).limit(15)
+            const dateSort = chat.sort((a, b) => a.createdAt - b.createdAt)
 
             res.send({
                 message: 'Chat found',
+                chatId: req.params.id,
                 createUserDetails: findChatList.createUser,
                 participentDetails: findChatList.participent,
                 success: true,
-                chat: chat
+                chat: dateSort
             });
         }
         else {
@@ -134,4 +104,4 @@ const getAllChat = async (req, res) => {
     }
 }
 
-module.exports = { chatListPost, getAllChatLIst, searchUser, chatCreate, getAllChat }
+module.exports = { chatListPost, getAllChatLIst, searchUser, getAllChat }

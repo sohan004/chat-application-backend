@@ -26,7 +26,7 @@ const accountSchema = new mongoose.Schema({
     },
     updatedAt: {
         type: Date,
-        default: new Date()
+        default: Date.now
     },
     activeStatus: {
         type: Boolean,

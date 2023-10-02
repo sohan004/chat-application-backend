@@ -4,6 +4,10 @@ const mongoose = require('mongoose');
 
 
 const chatShema = new mongoose.Schema({
+    _id:{
+        type: mongoose.Types.ObjectId,
+        required: true,
+    },
     chatId: {
         type: mongoose.Types.ObjectId,
         required: true,
@@ -18,6 +22,10 @@ const chatShema = new mongoose.Schema({
     },
     message: {
         type: String,
+    },
+    type: {
+        type: String,
+        enum: ['text', 'image', 'video'],
         required: true,
     },
     image: {
@@ -33,11 +41,11 @@ const chatShema = new mongoose.Schema({
     ],
     createdAt: {
         type: Date,
-        default: new Date()
+        default: Date.now
     },
     updatedAt: {
         type: Date,
-        default: new Date()
+        default: Date.now
     }
 });
 

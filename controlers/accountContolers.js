@@ -127,7 +127,7 @@ const userPut = async (req, res) => {
     const findUser = UserAccount.findById(req.params.id);
     if (!findUser) return res.status(400).send({ message: 'User not found.', success: false });
 
-    const updateUser = await UserAccount.findByIdAndUpdate(req.params.id, { $set: { ...req.body, updatedAt: new Date() } }, { new: true, upsert: true });
+    const updateUser = await UserAccount.findByIdAndUpdate(req.params.id, { $set: { ...req.body, updatedAt: Date.now } }, { new: true, upsert: true });
     if (!updateUser) return res.status(400).send({ message: 'User not updated.', success: false });
 
 

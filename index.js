@@ -1,12 +1,15 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;
+const port =  3000;
 const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const accoutRouter = require('./router/accountRouter');
 const chatListRouter = require('./router/chatListRouter');
+const chatRouter = require('./router/chatRouter');
 const multer = require('multer');
+const http = require('http');
+
 dotenv.config();
 
 mongoose.connect(process.env.mongouri, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -26,6 +29,7 @@ app.get('/', (req, res) => {
 // all route
 app.use('/account', accoutRouter);
 app.use('/chatlist', chatListRouter);
+app.use('/chat', chatRouter);
 app.use('/uploads', express.static('uploads'));
 
 //multer error handelaer
@@ -39,4 +43,28 @@ let errorHandler = (err, req, res, next) => {
 
 
 app.use(errorHandler);
-app.listen(port)
+const server = app.listen(port, '192.168.0.108')
+const io = require('socket.io')(server, {
+    pingTimeout: 60000,
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    },
+});
+
+io.on('connection', (socket) => {
+    console.log(`User connected on socket`);
+    socket.on('seenByOn', (data) => {
+        io.emit('seenBy', data);
+    });
+
+    socket.on('typingOn', (data) => {
+        io.emit('typing_start', data);
+    });
+    socket.on('typingOf', (data) => {
+        io.emit('typing_end', data);
+    });
+
+});
+
+global.io = io;
