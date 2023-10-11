@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const { chatListPost, getAllChatLIst, searchUser, getAllChat } = require('../controlers/chatListControler');
+const { chatListPost, getAllChatLIst, searchUser, getAllChat, createGroup } = require('../controlers/chatListControler');
 const authorizationToken = require('../midelware/authorization');
-const multerupload = require('../midelware/multer');
+const { upload } = require('../midelware/multer');
 
 
 
@@ -12,6 +12,7 @@ router.get('/', authorizationToken, getAllChatLIst);
 router.get('/search/:text', authorizationToken, searchUser);
 
 router.post('/', authorizationToken, chatListPost);
+router.post('/group', authorizationToken, upload.single('image'), createGroup);
 
 
 

@@ -23,7 +23,10 @@ const chatListSchema = new mongoose.Schema({
         required: true,
         enum: ['private', 'group'],
     },
-    chatName: {
+    groupName: {
+        type: String,
+    },
+    groupImg: {
         type: String,
     },
     lastMessage: {

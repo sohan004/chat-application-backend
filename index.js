@@ -12,6 +12,8 @@ const http = require('http');
 
 dotenv.config();
 
+
+
 mongoose.connect(process.env.mongouri, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('Connected to MongoDB...'))
     .catch(err => console.error('Could not connect to MongoDB...'));
@@ -31,6 +33,8 @@ app.use('/account', accoutRouter);
 app.use('/chatlist', chatListRouter);
 app.use('/chat', chatRouter);
 app.use('/uploads', express.static('uploads'));
+app.use('/videos', express.static('videos'));
+app.use('/chatFiles', express.static('chatFiles'));
 
 //multer error handelaer
 let errorHandler = (err, req, res, next) => {
@@ -56,6 +60,7 @@ io.on('connection', (socket) => {
     console.log(`User connected on socket`);
     socket.on('seenByOn', (data) => {
         io.emit('seenBy', data);
+        io.emit('seenBy2', data);
     });
 
     socket.on('typingOn', (data) => {

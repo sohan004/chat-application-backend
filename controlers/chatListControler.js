@@ -44,6 +44,27 @@ const chatListPost = async (req, res) => {
 }
 
 
+const createGroup = async (req, res) => {
+    const fileName = req.file?.filename;
+    const body = JSON.parse(req.body.jsonData);
+    try {
+        const createGrp = new ChatList({
+            createUser: req.user.id,
+            participent: body.participent,
+            chatType: 'group',
+            groupName: body.groupName,
+            groupImg: fileName,
+        });
+        const result = await createGrp.save();
+        const chatLIst = await ChatList.findById(result._id).populate('createUser', '-password').populate('participent', '-password').populate('lastMessage');
+        res.send({ message: 'Group created successfully', success: true, chatInfo: chatLIst });
+    } catch (error) {
+        console.log(error);
+        res.send({ message: 'Group created failed', success: false });
+    }
+}
+
+
 const getAllChatLIst = async (req, res) => {
     try {
         const chatList = await ChatList.find({ $or: [{ createUser: req.user.id }, { participent: { $in: req.user.id } }] }).populate('createUser', '-password').populate('participent', '-password').populate('lastMessage').sort({ updatedAt: -1 });
@@ -104,4 +125,4 @@ const getAllChat = async (req, res) => {
     }
 }
 
-module.exports = { chatListPost, getAllChatLIst, searchUser, getAllChat }
+module.exports = { chatListPost, getAllChatLIst, searchUser, getAllChat, createGroup }
