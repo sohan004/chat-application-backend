@@ -14,7 +14,7 @@ dotenv.config();
 
 
 
-mongoose.connect('mongodb+srv://taskProject:w2ER3QOfrqlZfrT4@cluster0.bitxn0d.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.mongouri, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('Connected to MongoDB...'))
     .catch(err => console.error('Could not connect to MongoDB...'));
 
