@@ -19,7 +19,7 @@ const userGet = async (req, res) => {
     const token = req.header('Authorization');
 
     try {
-        const decoded = await jwt.verify(token, process.env.jwtPrivateKey);
+        const decoded = await jwt.verify(token, 'UtD24dEPXK9D6cvRdZDY09KPSvbUHW9EaBzajxR0TtLWlpLh1IqzZBufv0C9Vdq0lAE39KwcHJCapUT');
 
         if (!decoded) return res.status(400).send({ message: 'Invalid token.', success: false });
 
@@ -67,7 +67,7 @@ const userSign = async (req, res) => {
     const validPassword = await bcrypt.compare(req.body.password, findUser.password);
     if (!validPassword) return res.status(400).send({ message: 'Invalid password.', success: false });
 
-    const token = await jwt.sign({ id: findUser._id, email: findUser.email }, process.env.jwtPrivateKey, { expiresIn: '120h' });
+    const token = await jwt.sign({ id: findUser._id, email: findUser.email }, 'UtD24dEPXK9D6cvRdZDY09KPSvbUHW9EaBzajxR0TtLWlpLh1IqzZBufv0C9Vdq0lAE39KwcHJCapUT', { expiresIn: '120h' });
     await res.send({
         message: 'Login successfully',
         success: true,
