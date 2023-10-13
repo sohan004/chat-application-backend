@@ -7,6 +7,8 @@ const chatSchema = require('../models/chatModels');
 const UserAccount = mongoose.model('UserAccount', accountSchema);
 const ChatList = mongoose.model('ChatList', chatListSchema);
 const Chat = mongoose.model('Chat', chatSchema);
+const deletePhoto = require('../midelware/deletPhoto');
+const deleteVideo = require('../midelware/deleteVideo');
 
 
 const chatListPost = async (req, res) => {
@@ -18,8 +20,8 @@ const chatListPost = async (req, res) => {
         });
 
         if (req.body.chatType == 'private') {
-            const check = await ChatList.findOne({ $and: [{ createUser: req.user.id }, { participent: { $in: req.body.participent } }] });
-            const check2 = await ChatList.findOne({ $and: [{ participent: { $in: [req.user.id] } }, { createUser: { $in: req.body.participent } }] });
+            const check = await ChatList.findOne({ $and: [{ createUser: req.user.id, chatType: 'private' }, { participent: { $in: req.body.participent }, chatType: 'private' }] });
+            const check2 = await ChatList.findOne({ $and: [{ participent: { $in: [req.user.id] }, chatType: 'private' }, { createUser: { $in: req.body.participent }, chatType: 'private' }] });
 
             if (check || check2) {
                 res.send({ message: 'Chat already created', success: true, chatInfo: check || check2 });
@@ -57,10 +59,99 @@ const createGroup = async (req, res) => {
         });
         const result = await createGrp.save();
         const chatLIst = await ChatList.findById(result._id).populate('createUser', '-password').populate('participent', '-password').populate('lastMessage');
+        await global.io.emit('newChatListCreate', { chatInfo: chatLIst });
         res.send({ message: 'Group created successfully', success: true, chatInfo: chatLIst });
     } catch (error) {
         console.log(error);
         res.send({ message: 'Group created failed', success: false });
+    }
+}
+
+const groupUserRemove = async (req, res) => {
+    const body = req.body;
+    try {
+        const findChatList = await ChatList.findById(body.chatId);
+        if (findChatList.createUser == req.user.id) {
+            const updateChatList = await ChatList.findByIdAndUpdate(body.chatId, { $pull: { participent: body.userId } }, { new: true }).populate('createUser', '-password').populate('participent', '-password').populate('lastMessage');
+            await global.io.emit('group User Remove2', body);
+            await global.io.emit('group User Remove', body);
+            res.send({ message: 'User removed successfully', success: true, chatInfo: updateChatList });
+        }
+        else {
+            res.send({ message: 'you are no authorized to remove user', success: false });
+        }
+    } catch (error) {
+        console.log(error);
+        res.send({ message: 'User removed failed', success: false });
+    }
+}
+
+
+const groupUserAdd = async (req, res) => {
+    const body = req.body;
+    const newUserId = body.newUser.map(n => n._id);
+    try {
+        const findChatList = await ChatList.findById(body.chatId);
+
+        if (findChatList.createUser == req.user.id) {
+            const updateChatList = await ChatList.findByIdAndUpdate(body.chatId,
+                { $push: { participent: { $each: newUserId } } },
+                { new: true, })
+                .populate('createUser', '-password')
+                .populate('participent', '-password')
+                .populate('lastMessage');
+
+            await global.io.emit('grp New User Add', {
+                chatInfo: updateChatList,
+                chatId: body.chatId,
+                newUserId: newUserId
+            });
+
+            res.send({ message: 'User added successfully', success: true, chatInfo: updateChatList });
+        }
+        else {
+            res.send({ message: 'you are no authorized to add user', success: false });
+        }
+    } catch (error) {
+        console.log(error);
+        res.send({ message: 'User added failed', success: false });
+    }
+}
+
+
+const deleteChatList = async (req, res) => {
+    try {
+        const findAllChat = await Chat.find({ chatId: req.params.id });
+
+        const allImg = await findAllChat.map(chat => chat?.image);
+        const allVideo = await findAllChat.map(chat => chat?.video);
+
+
+        await allImg.map(img => {
+            if (img) {
+                deletePhoto(img);
+            }
+        });
+
+        await allVideo.map(video => {
+            if (video) {
+                deleteVideo(video);
+            }
+        })
+
+        const deleteChatList = await ChatList.findByIdAndDelete(req.params.id);
+        const deleteChat = await Chat.deleteMany({ chatId: req.params.id });
+
+        await global.io.emit('chat Delete', { chatId: req.params.id });
+        await global.io.emit('chat Delete2', { chatId: req.params.id });
+
+        res.send({ message: 'Chat deleted successfully', success: true });
+
+    } catch (error) {
+        console.log(error);
+
+        res.send({ message: 'Chat deleted failed', success: false });
+
     }
 }
 
@@ -109,6 +200,9 @@ const getAllChat = async (req, res) => {
 
             res.send({
                 message: 'Chat found',
+                chatType: findChatList.chatType,
+                groupName: findChatList?.groupName,
+                groupImg: findChatList?.groupImg,
                 chatId: req.params.id,
                 createUserDetails: findChatList.createUser,
                 participentDetails: findChatList.participent,
@@ -125,4 +219,4 @@ const getAllChat = async (req, res) => {
     }
 }
 
-module.exports = { chatListPost, getAllChatLIst, searchUser, getAllChat, createGroup }
+module.exports = { chatListPost, getAllChatLIst, searchUser, getAllChat, createGroup, groupUserRemove, groupUserAdd, deleteChatList }
