@@ -83,6 +83,51 @@ const userSign = async (req, res) => {
 
 };
 
+const online = async (req, res) => {
+    try {
+        const findUser = await UserAccount.findById(req.user.id);
+        if (!findUser) return res.status(400).send({ message: 'Email not registered.', success: false });
+        if (findUser.activeStatus) return res.status(400).send({ message: 'User already online.', success: false });
+
+        const updatedUser = await UserAccount.findByIdAndUpdate(req.user.id, { activeStatus: true }, { new: true });
+        global.io.emit('user online status', { userId: req.user.id, activeStatus: true });
+
+        if (!updatedUser) {
+            return res.status(500).json({ error: 'Error updating activeUser' });
+        }
+
+        // Start a timer to reset activeUser to false after 10 minutes
+        setTimeout(async () => {
+            const resetUser = await UserAccount.findByIdAndUpdate(req.user.id, { activeStatus: false });
+            global.io.emit('user ofline status', { userId: req.user.id, activeStatus: false });
+
+            if (!resetUser) {
+                console.error('Error resetting activeUser');
+            }
+        },  10 * 60 * 1000 ); // 10 minutes in milliseconds
+
+        res.json({ message: 'active successful', success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred' });
+    }
+}
+const ofline = async (req, res) => {
+    // try {
+    //     const userActiveUpdate = await UserAccount.findByIdAndUpdate(
+    //         req.user.id,
+    //         { $set: { activeStatus: false } },
+    //         { new: true, upsert: true }
+    //     );
+    //     console.log(userActiveUpdate);
+    //     res.send({ message: 'User updated successfully', success: true });
+    // } catch (error) {
+    //     console.log(error);
+    //     res.send({ message: 'User not updated.', success: false });
+    // }
+}
+
+
 
 
 const userPost = async (req, res) => {
@@ -139,4 +184,4 @@ const userPut = async (req, res) => {
 const userDelete = async (req, res) => { };
 
 
-module.exports = { userGet, userSign, userPost, userPut, userDelete, forgetPassword }
+module.exports = { userGet, userSign, userPost, userPut, userDelete, forgetPassword, online, ofline }
