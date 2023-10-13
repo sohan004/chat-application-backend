@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const port =  3000;
+const port = process.env.PORT || 3000;
 const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -48,7 +48,7 @@ let errorHandler = (err, req, res, next) => {
 
 app.use(errorHandler);
 
-const server = app.listen(port, '192.168.0.108')
+const server = app.listen(port)
 const io = require('socket.io')(server, {
     pingTimeout: 60000,
     cors: {
