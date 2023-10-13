@@ -25,31 +25,34 @@ const Chat = mongoose.model('Chat', chatSchema);
 
 const chatCreate = async (req, res) => {
 
+    const messageId = await generateUniqueMessageId(); // You can implement this function
+
+    // Create the chat message object with the generated ID
+    const chatMessage = await {
+        _id: messageId,
+        sender: req.user.id,
+        seenBy: [req.user.id],
+        ...req.body,
+    };
+    
+    global.io.emit('newChatAdd', {
+        chatInfo: chatMessage,
+    });
+    global.io.emit('newChatAdd2', {
+        chatInfo: chatMessage,
+    });
+
     const findChatList = await ChatList.findById(req.body.chatId);
 
     try {
 
         if (await findChatList.createUser == req.user.id || await findChatList.participent.includes(req.user.id)) {
 
-            const messageId = await generateUniqueMessageId(); // You can implement this function
-
-            // Create the chat message object with the generated ID
-            const chatMessage = await {
-                _id: messageId,
-                sender: req.user.id,
-                seenBy: [req.user.id],
-                ...req.body,
-            };
 
             // console.log(chatMessage);
 
 
-           global.io.emit('newChatAdd', {
-                chatInfo: chatMessage,
-            });
-            global.io.emit('newChatAdd2', {
-                chatInfo: chatMessage,
-            });
+
 
             const chat = await new Chat(chatMessage);
             const result = await chat.save();
