@@ -34,7 +34,7 @@ const chatCreate = async (req, res) => {
         seenBy: [req.user.id],
         ...req.body,
     };
-    
+    // commit
     global.io.emit('newChatAdd', {
         chatInfo: chatMessage,
     });
