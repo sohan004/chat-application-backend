@@ -7,6 +7,7 @@ var jwt = require('jsonwebtoken');
 const router = express.Router();
 const multerupload = require('../midelware/multer');
 const deletPhoto = require('../midelware/deletPhoto');
+const { emailSend } = require('../midelware/emailSend');
 
 const UserAccount = mongoose.model('UserAccount', accountSchema);
 
@@ -104,7 +105,7 @@ const online = async (req, res) => {
             if (!resetUser) {
                 console.error('Error resetting activeUser');
             }
-        },  10 * 60 * 1000 ); // 10 minutes in milliseconds
+        }, 10 * 60 * 1000); // 10 minutes in milliseconds
 
         res.json({ message: 'active successful', success: true });
     } catch (error) {
@@ -128,9 +129,8 @@ const ofline = async (req, res) => {
 }
 
 
+const otp = async (req, res) => {
 
-
-const userPost = async (req, res) => {
     const imgFileName = req.file?.filename;
     const jsonData = JSON.parse(req.body.jsonData);
 
@@ -139,24 +139,69 @@ const userPost = async (req, res) => {
         if (imgFileName) deletPhoto(imgFileName);
         return res.status(400).send({ message: 'Email already registered.', success: false });
     }
+    const otpCode4digit = await Math.floor(1000 + Math.random() * 9000);
+
+    await emailSend('OTP', `
+    <h1  style="text-align:center;" >OTP: <span style="color:red;">${otpCode4digit}</span></h1>
+    <p style="text-align:center; margin-top:5px;">The duration of this OTP is only 2 minutes</p>
+    `, jsonData.email);
 
     const salt = await bcrypt.genSalt(saltRounds);
     const hash = await bcrypt.hash(jsonData.password, salt);
 
-
-
-    try {
-        const user = await new UserAccount({
-            name: jsonData.name,
-            profileImg: imgFileName,
+    const token = await jwt.sign(
+        {
             email: jsonData.email,
             password: hash,
+            name: jsonData.name,
+            profileImg: imgFileName,
+            otp: otpCode4digit
+        }
+        , process.env.jwtPrivateKey, { expiresIn: '2m' });
+    await res.send({
+        message: 'OTP send successfully',
+        success: true,
+        token: token,
+    });
+
+
+
+}
+
+
+
+
+
+const userPost = async (req, res) => {
+    const otpToken = req.body?.otpToken
+
+    try {
+
+        const decoded = await jwt.verify(otpToken, process.env.jwtPrivateKey);
+
+        if (!decoded) return res.status(400).send({ message: 'Invalid token.', success: false });
+
+        const findUser = await UserAccount.findOne({ email: decoded?.email });
+        if (findUser) {
+            deletPhoto(decoded?.profileImg);
+            return res.status(400).send({ message: 'Email already registered.', success: false });
+        }
+
+        if (decoded?.otp != req.body.otp) {
+            return res.status(400).send({ message: 'Invalid OTP.', success: false });
+        }
+
+        const user = await new UserAccount({
+            name: decoded?.name,
+            profileImg: decoded?.profileImg,
+            email: decoded?.email,
+            password: decoded?.password,
         });
+
         const result = await user.save();
         res.send({ message: 'User created successfully', success: true });
-    } catch (err) {
-        if (imgFileName) deletPhoto(imgFileName);
-        res.send(err.message);
+    } catch (error) {
+        return res.status(400).send({ message: 'Expire otp', success: false });
     }
 };
 
@@ -184,4 +229,4 @@ const userPut = async (req, res) => {
 const userDelete = async (req, res) => { };
 
 
-module.exports = { userGet, userSign, userPost, userPut, userDelete, forgetPassword, online, ofline }
+module.exports = { userGet, userSign, userPost, userPut, userDelete, forgetPassword, online, ofline, otp }
